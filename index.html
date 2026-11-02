@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Rendimiento Académico</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between py-3 gap-3">
+                <div class="flex items-center space-x-3 w-full sm:w-auto">
+                    <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-md shadow-indigo-600/30">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base sm:text-lg leading-tight text-white tracking-wide">Ingeniero - Robert Ramos Zavala Data Analytics</h1>
+                        <p class="text-xs text-indigo-400 font-medium">Dashboard de Rendimiento Académico (50 Alumnos)</p>
+                    </div>
+                </div>
+
+                <!-- Course & Section Selectors Filter -->
+                <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <div class="flex items-center space-x-2">
+                        <label for="filtroCurso" class="text-xs font-semibold text-slate-400 hidden md:block">Curso:</label>
+                        <select id="filtroCurso" onchange="filtrarFiltrosCombinados()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2">
+                            <option value="TODOS">Todos los Cursos</option>
+                            <option value="Programación I">Programación I</option>
+                            <option value="Base de Datos">Base de Datos</option>
+                            <option value="Ingeniería de Software">Ingeniería de Software</option>
+                            <option value="Inteligencia Artificial">Inteligencia Artificial</option>
+                            <option value="Computación Gráfica">Computación Gráfica</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <label for="filtroSeccion" class="text-xs font-semibold text-slate-400 hidden md:block">Sección:</label>
+                        <select id="filtroSeccion" onchange="filtrarFiltrosCombinados()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2">
+                            <option value="TODAS">Todas las Secciones</option>
+                            <option value="A">Sección A</option>
+                            <option value="B">Sección B</option>
+                            <option value="C">Sección C</option>
+                            <option value="D">Sección D</option>
+                            <option value="E">Sección E</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="bg-slate-950/80 border-b border-slate-800 sticky top-16 z-20 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto py-2 scrollbar-none" aria-label="Tabs">
+                <button onclick="switchTab('resumen')" id="tab-resumen" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 transition flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Resumen General</span>
+                </button>
+                <button onclick="switchTab('aprobados')" id="tab-aprobados" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>Aprobados / Desaprobados</span>
+                </button>
+                <button onclick="switchTab('asistencia')" id="tab-asistencia" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                    <span>Asistencia y Faltas</span>
+                </button>
+                <button onclick="switchTab('parentesco')" id="tab-parentesco" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-people-arrows"></i>
+                    <span>Hermanos y Primos</span>
+                </button>
+                <button onclick="switchTab('lista')" id="tab-lista" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Lista de 50 Alumnos</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- KPI Metrics Header Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div onclick="switchTab('aprobados')" class="cursor-pointer bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow hover:border-emerald-500/50 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Estudiantes Aprobados</span>
+                    <span class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-circle-check"></i></span>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span id="kpi-aprobados" class="text-2xl font-bold text-white">45</span>
+                    <span id="kpi-aprobados-pct" class="text-xs font-semibold text-emerald-400">(90%)</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Nota final ≥ 11</p>
+            </div>
+
+            <div onclick="switchTab('aprobados')" class="cursor-pointer bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow hover:border-rose-500/50 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Estudiantes Desaprobados</span>
+                    <span class="p-2 bg-rose-500/10 text-rose-400 rounded-lg"><i class="fa-solid fa-circle-xmark"></i></span>
+                </div>
+                <div class="mt-2 flex items-baseline space-x-2">
+                    <span id="kpi-desaprobados" class="text-2xl font-bold text-white">5</span>
+                    <span id="kpi-desaprobados-pct" class="text-xs font-semibold text-rose-400">(10%)</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Nota final &lt; 11</p>
+            </div>
+
+            <div onclick="switchTab('asistencia')" class="cursor-pointer bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow hover:border-sky-500/50 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Promedio de Asistencia</span>
+                    <span class="p-2 bg-sky-500/10 text-sky-400 rounded-lg"><i class="fa-solid fa-calendar-check"></i></span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpi-asistencia" class="text-2xl font-bold text-white">85.8%</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Promedio general del grupo</p>
+            </div>
+
+            <div onclick="switchTab('parentesco')" class="cursor-pointer bg-slate-800/80 border border-slate-700/60 p-4 rounded-xl shadow hover:border-amber-500/50 transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-400">Coincidencias de Apellidos</span>
+                    <span class="p-2 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-users"></i></span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpi-familias" class="text-2xl font-bold text-white">4 Grupos</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Torres, Mendoza, Vargas, Medina</p>
+            </div>
+        </div>
+
+        <!-- TAB 1: RESUMEN GENERAL -->
+        <div id="content-resumen" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart 1: Rendimiento -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-chart-pie text-indigo-400"></i>
+                                <span>Distribución de Aprobados vs Desaprobados</span>
+                            </h2>
+                            <button onclick="switchTab('aprobados')" class="text-xs text-indigo-400 hover:underline">Ver detalle →</button>
+                        </div>
+                        <div class="relative h-64 w-full flex items-center justify-center">
+                            <canvas id="chartResumenAprobados"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-700/60 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico 1: Estado Académico Final del Grupo</p>
+                        <p class="text-xs text-slate-400 mt-1">Refleja la proporción de los 50 estudiantes graduados en condición de Aprobado (90%) y Desaprobado (10%).</p>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Top Asistencias -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-award text-emerald-400"></i>
+                                <span>Top 5 Estudiantes con Mejor Asistencia</span>
+                            </h2>
+                            <button onclick="switchTab('asistencia')" class="text-xs text-indigo-400 hover:underline">Ver detalle →</button>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="chartResumenAsistencia"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-700/60 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico 2: Estudiantes con Mayor Porcentaje de Asistencia</p>
+                        <p class="text-xs text-slate-400 mt-1">Liderado por Natalia Silva (99%), Renata Villanueva (98%) y Sofía Vargas (98%).</p>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Mayor Inasistencia -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                                <span>Top 5 Estudiantes con Mayores Faltas</span>
+                            </h2>
+                            <button onclick="switchTab('asistencia')" class="text-xs text-indigo-400 hover:underline">Ver detalle →</button>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="chartResumenFaltas"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-700/60 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico 3: Estudiantes con Menor Asistencia Registrada</p>
+                        <p class="text-xs text-slate-400 mt-1">Óscar Fuentes (65% de asistencia / 35% de faltas) encabeza la lista de inasistencias.</p>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Parentescos -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+                                <i class="fa-solid fa-people-roof text-amber-400"></i>
+                                <span>Familias / Apellidos Coincidentes</span>
+                            </h2>
+                            <button onclick="switchTab('parentesco')" class="text-xs text-indigo-400 hover:underline">Ver detalle →</button>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="chartResumenApellidos"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-700/60 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico 4: Recuento de Estudiantes por Apellido Compartido</p>
+                        <p class="text-xs text-slate-400 mt-1">Frecuencia de apellidos paternos/maternos coincidentes para análisis de parentesco.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: APROBADOS Y DESAPROBADOS -->
+        <div id="content-aprobados" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Left Column Graph -->
+                <div class="md:col-span-1 bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-bold text-slate-100 mb-2">Relación Aprobación</h2>
+                        <div class="relative h-64">
+                            <canvas id="chartDetalleAprobados"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-700 text-center">
+                        <p class="text-xs font-semibold text-slate-300">Gráfico de Condición Académica</p>
+                        <p class="text-xs text-slate-400 mt-1">Criterio de aprobación: Nota Final ≥ 11.</p>
+                    </div>
+                </div>
+
+                <!-- Right Column Alert & Table -->
+                <div class="md:col-span-2 space-y-6">
+                    <!-- Warning Banner -->
+                    <div class="bg-rose-950/40 border border-rose-800/60 p-4 rounded-xl flex items-start space-x-3">
+                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-xl mt-0.5"></i>
+                        <div>
+                            <h3 class="font-bold text-rose-300 text-sm">Alumnos en Condición Desaprobada (5 Alumnos)</h3>
+                            <p class="text-xs text-rose-200/80 mt-1">Estos estudiantes obtuvieron una nota final promedio de 10 puntos y registraron asistencias bajas entre 65% y 69%.</p>
+                        </div>
+                    </div>
+
+                    <!-- Failed Students List Card -->
+                    <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-lg">
+                        <h3 class="font-bold text-white text-sm mb-4">Detalle de Alumnos Desaprobados</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead class="bg-slate-900/80 text-slate-400 uppercase font-semibold border-b border-slate-700">
+                                    <tr>
+                                        <th class="p-3">ID</th>
+                                        <th class="p-3">Estudiante</th>
+                                        <th class="p-3">Curso / Seccion</th>
+                                        <th class="p-3 text-center">Nota Final</th>
+                                        <th class="p-3 text-center">Asistencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaDesaprobados" class="divide-y divide-slate-700/60">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ASISTENCIA Y FALTAS -->
+        <div id="content-asistencia" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Top Attendance Table & Chart -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-up text-emerald-400"></i>
+                        <span>Top 10 Alumnos con Mayor Asistencia</span>
+                    </h2>
+                    <div class="relative h-60">
+                        <canvas id="chartDetalleAsistencia"></canvas>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico de Excelencia en Asistencia</p>
+                        <p class="text-xs text-slate-400 mt-1">Lista de alumnos con asistencia superior al 95%.</p>
+                    </div>
+                </div>
+
+                <!-- Highest Absences Table & Chart -->
+                <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-down text-rose-400"></i>
+                        <span>Top 10 Alumnos con Mayor Porcentaje de Faltas</span>
+                    </h2>
+                    <div class="relative h-60">
+                        <canvas id="chartDetalleFaltas"></canvas>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700 text-center">
+                        <p class="text-xs text-slate-300 font-medium">Gráfico de Control de Inasistencias</p>
+                        <p class="text-xs text-slate-400 mt-1">Identificación de estudiantes con faltas acumuladas mayores al 30%.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: HERMANOS Y PRIMOS -->
+        <div id="content-parentesco" class="tab-content hidden space-y-6">
+            <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg">
+                <h2 class="font-bold text-white text-base mb-2">Análisis de Parentescos por Apellidos</h2>
+                <p class="text-xs text-slate-400 mb-6">Identificación de coincidencia de apellidos paternos y maternos dentro de la nómina de 50 estudiantes registrados.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="cardsParentesco">
+                    <!-- Generated via JS -->
+                </div>
+
+                <div class="mt-8 relative h-72">
+                    <canvas id="chartDetalleParentesco"></canvas>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-700 text-center">
+                    <p class="text-xs text-slate-300 font-medium">Gráfico Frecuencia de Apellidos Coincidentes</p>
+                    <p class="text-xs text-slate-400 mt-1">Resumen cuantitativo de alumnos agrupados por apellido.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: LISTA COMPLETA DE ALUMNOS -->
+        <div id="content-lista" class="tab-content hidden space-y-4">
+            <div class="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="font-bold text-white text-base">Nómina Completa de Estudiantes (50 Registros)</h2>
+                        <p class="text-xs text-slate-400">Listado general interactivo con notas finales y asistencia por asignatura</p>
+                    </div>
+                    <input type="text" id="inputSearch" onkeyup="filtrarTabla()" placeholder="Buscar alumno..." class="w-full sm:w-64 bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">ID</th>
+                                <th class="p-3">Nombre Completo</th>
+                                <th class="p-3">Curso</th>
+                                <th class="p-3">Sección</th>
+                                <th class="p-3">Ciclo</th>
+                                <th class="p-3 text-center">Tareas</th>
+                                <th class="p-3 text-center">Prácticas</th>
+                                <th class="p-3 text-center">Parcial</th>
+                                <th class="p-3 text-center">Proyecto</th>
+                                <th class="p-3 text-center font-bold text-indigo-400">Nota Final</th>
+                                <th class="p-3 text-center">Asistencia</th>
+                                <th class="p-3 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCompletaBody" class="divide-y divide-slate-700/60">
+                            <!-- Generated Dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800 text-center py-4 text-xs text-slate-500">
+        Dashboard de Rendimiento Académico &copy; 2026 - Análisis sobre 50 registros de estudiantes.
+    </footer>
+
+    <!-- JavaScript Data Processing & Visualization Logic -->
+    <script>
+        // Exact 50 Students Dataset
+        const rawData = [
+            { ID_Estudiante: "EST-001", Nombre_Estudiante: "Ana Torres", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 16, Nota_Practica: 15, Nota_Parcial: 14, Nota_Proyecto: 17, Nota_Final: 15, Asistencia_Porcentaje: 92, Participacion_Porcentaje: 88 },
+            { ID_Estudiante: "EST-002", Nombre_Estudiante: "Luis Mendoza", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 14, Nota_Practica: 13, Nota_Parcial: 12, Nota_Proyecto: 15, Nota_Final: 13, Asistencia_Porcentaje: 85, Participacion_Porcentaje: 76 },
+            { ID_Estudiante: "EST-003", Nombre_Estudiante: "Carla Rojas", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 18, Nota_Practica: 17, Nota_Parcial: 16, Nota_Proyecto: 18, Nota_Final: 17, Asistencia_Porcentaje: 96, Participacion_Porcentaje: 94 },
+            { ID_Estudiante: "EST-004", Nombre_Estudiante: "Diego Flores", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 11, Nota_Practica: 12, Nota_Parcial: 10, Nota_Proyecto: 13, Nota_Final: 11, Asistencia_Porcentaje: 72, Participacion_Porcentaje: 58 },
+            { ID_Estudiante: "EST-005", Nombre_Estudiante: "María Castillo", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 15, Nota_Practica: 16, Nota_Parcial: 14, Nota_Proyecto: 16, Nota_Final: 15, Asistencia_Porcentaje: 89, Participacion_Porcentaje: 82 },
+            { ID_Estudiante: "EST-006", Nombre_Estudiante: "Jorge Salazar", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 13, Nota_Practica: 14, Nota_Parcial: 12, Nota_Proyecto: 14, Nota_Final: 13, Asistencia_Porcentaje: 81, Participacion_Porcentaje: 74 },
+            { ID_Estudiante: "EST-007", Nombre_Estudiante: "Sofía Vargas", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 19, Nota_Practica: 18, Nota_Parcial: 17, Nota_Proyecto: 19, Nota_Final: 18, Asistencia_Porcentaje: 98, Participacion_Porcentaje: 95 },
+            { ID_Estudiante: "EST-008", Nombre_Estudiante: "Pedro Navarro", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 10, Nota_Practica: 11, Nota_Parcial: 10, Nota_Proyecto: 11, Nota_Final: 10, Asistencia_Porcentaje: 68, Participacion_Porcentaje: 52 },
+            { ID_Estudiante: "EST-009", Nombre_Estudiante: "Lucía Herrera", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 17, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 17, Nota_Final: 16, Asistencia_Porcentaje: 94, Participacion_Porcentaje: 90 },
+            { ID_Estudiante: "EST-010", Nombre_Estudiante: "Andrés Paredes", Curso: "Programación I", Seccion: "A", Ciclo: "II", Nota_Tarea: 12, Nota_Practica: 13, Nota_Parcial: 11, Nota_Proyecto: 13, Nota_Final: 12, Asistencia_Porcentaje: 78, Participacion_Porcentaje: 65 },
+
+            { ID_Estudiante: "EST-011", Nombre_Estudiante: "Valeria Campos", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 15, Nota_Practica: 15, Nota_Parcial: 14, Nota_Proyecto: 16, Nota_Final: 15, Asistencia_Porcentaje: 90, Participacion_Porcentaje: 85 },
+            { ID_Estudiante: "EST-012", Nombre_Estudiante: "Ricardo Peña", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 16, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 17, Nota_Final: 16, Asistencia_Porcentaje: 93, Participacion_Porcentaje: 89 },
+            { ID_Estudiante: "EST-013", Nombre_Estudiante: "Elena Mendoza", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 19, Nota_Practica: 18, Nota_Parcial: 17, Nota_Proyecto: 18, Nota_Final: 18, Asistencia_Porcentaje: 97, Participacion_Porcentaje: 96 },
+            { ID_Estudiante: "EST-014", Nombre_Estudiante: "Marco León", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 14, Nota_Practica: 14, Nota_Parcial: 13, Nota_Proyecto: 14, Nota_Final: 14, Asistencia_Porcentaje: 84, Participacion_Porcentaje: 79 },
+            { ID_Estudiante: "EST-015", Nombre_Estudiante: "Gabriela Ruiz", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 17, Nota_Practica: 17, Nota_Parcial: 16, Nota_Proyecto: 17, Nota_Final: 17, Asistencia_Porcentaje: 95, Participacion_Porcentaje: 91 },
+            { ID_Estudiante: "EST-016", Nombre_Estudiante: "Fernando Vega", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 13, Nota_Practica: 12, Nota_Parcial: 11, Nota_Proyecto: 13, Nota_Final: 12, Asistencia_Porcentaje: 76, Participacion_Porcentaje: 68 },
+            { ID_Estudiante: "EST-017", Nombre_Estudiante: "Daniela Cruz", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 16, Nota_Practica: 15, Nota_Parcial: 16, Nota_Proyecto: 16, Nota_Final: 16, Asistencia_Porcentaje: 91, Participacion_Porcentaje: 87 },
+            { ID_Estudiante: "EST-018", Nombre_Estudiante: "Miguel Soto", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 10, Nota_Practica: 10, Nota_Parcial: 10, Nota_Proyecto: 11, Nota_Final: 10, Asistencia_Porcentaje: 69, Participacion_Porcentaje: 55 },
+            { ID_Estudiante: "EST-019", Nombre_Estudiante: "Patricia Núñez", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 15, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 16, Nota_Final: 16, Asistencia_Porcentaje: 88, Participacion_Porcentaje: 82 },
+            { ID_Estudiante: "EST-020", Nombre_Estudiante: "Carlos Reyes", Curso: "Base de Datos", Seccion: "B", Ciclo: "IV", Nota_Tarea: 13, Nota_Practica: 13, Nota_Parcial: 12, Nota_Proyecto: 13, Nota_Final: 13, Asistencia_Porcentaje: 80, Participacion_Porcentaje: 72 },
+
+            { ID_Estudiante: "EST-021", Nombre_Estudiante: "Rosa Medina", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 17, Nota_Practica: 16, Nota_Parcial: 16, Nota_Proyecto: 18, Nota_Final: 17, Asistencia_Porcentaje: 96, Participacion_Porcentaje: 93 },
+            { ID_Estudiante: "EST-022", Nombre_Estudiante: "Héctor Vargas", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 14, Nota_Practica: 14, Nota_Parcial: 13, Nota_Proyecto: 15, Nota_Final: 14, Asistencia_Porcentaje: 83, Participacion_Porcentaje: 75 },
+            { ID_Estudiante: "EST-023", Nombre_Estudiante: "Natalia Silva", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 19, Nota_Practica: 19, Nota_Parcial: 18, Nota_Proyecto: 19, Nota_Final: 18, Asistencia_Porcentaje: 99, Participacion_Porcentaje: 97 },
+            { ID_Estudiante: "EST-024", Nombre_Estudiante: "Óscar Fuentes", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 10, Nota_Practica: 11, Nota_Parcial: 10, Nota_Proyecto: 10, Nota_Final: 10, Asistencia_Porcentaje: 65, Participacion_Porcentaje: 50 },
+            { ID_Estudiante: "EST-025", Nombre_Estudiante: "Andrea Lozano", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 16, Nota_Practica: 15, Nota_Parcial: 15, Nota_Proyecto: 16, Nota_Final: 16, Asistencia_Porcentaje: 92, Participacion_Porcentaje: 86 },
+            { ID_Estudiante: "EST-026", Nombre_Estudiante: "Sergio Molina", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 12, Nota_Practica: 12, Nota_Parcial: 11, Nota_Proyecto: 12, Nota_Final: 12, Asistencia_Porcentaje: 75, Participacion_Porcentaje: 63 },
+            { ID_Estudiante: "EST-027", Nombre_Estudiante: "Claudia Espinoza", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 18, Nota_Practica: 17, Nota_Parcial: 17, Nota_Proyecto: 18, Nota_Final: 17, Asistencia_Porcentaje: 95, Participacion_Porcentaje: 92 },
+            { ID_Estudiante: "EST-028", Nombre_Estudiante: "Raúl Cabrera", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 13, Nota_Practica: 14, Nota_Parcial: 12, Nota_Proyecto: 13, Nota_Final: 13, Asistencia_Porcentaje: 82, Participacion_Porcentaje: 74 },
+            { ID_Estudiante: "EST-029", Nombre_Estudiante: "Mónica Valdez", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 15, Nota_Practica: 16, Nota_Parcial: 14, Nota_Proyecto: 16, Nota_Final: 15, Asistencia_Porcentaje: 87, Participacion_Porcentaje: 81 },
+            { ID_Estudiante: "EST-030", Nombre_Estudiante: "Iván Palomino", Curso: "Ingeniería de Software", Seccion: "C", Ciclo: "VI", Nota_Tarea: 11, Nota_Practica: 12, Nota_Parcial: 11, Nota_Proyecto: 12, Nota_Final: 11, Asistencia_Porcentaje: 73, Participacion_Porcentaje: 60 },
+
+            { ID_Estudiante: "EST-031", Nombre_Estudiante: "Gabriela Torres", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 19, Nota_Practica: 18, Nota_Parcial: 18, Nota_Proyecto: 19, Nota_Final: 18, Asistencia_Porcentaje: 98, Participacion_Porcentaje: 96 },
+            { ID_Estudiante: "EST-032", Nombre_Estudiante: "Daniel Rivas", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 14, Nota_Practica: 13, Nota_Parcial: 12, Nota_Proyecto: 14, Nota_Final: 13, Asistencia_Porcentaje: 84, Participacion_Porcentaje: 77 },
+            { ID_Estudiante: "EST-033", Nombre_Estudiante: "Alejandra Ponce", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 16, Nota_Practica: 17, Nota_Parcial: 16, Nota_Proyecto: 16, Nota_Final: 16, Asistencia_Porcentaje: 91, Participacion_Porcentaje: 88 },
+            { ID_Estudiante: "EST-034", Nombre_Estudiante: "Bruno Castro", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 12, Nota_Practica: 11, Nota_Parcial: 11, Nota_Proyecto: 12, Nota_Final: 11, Asistencia_Porcentaje: 74, Participacion_Porcentaje: 62 },
+            { ID_Estudiante: "EST-035", Nombre_Estudiante: "Camila Ortiz", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 17, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 17, Nota_Final: 16, Asistencia_Porcentaje: 93, Participacion_Porcentaje: 89 },
+            { ID_Estudiante: "EST-036", Nombre_Estudiante: "Sebastián Arias", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 15, Nota_Practica: 15, Nota_Parcial: 14, Nota_Proyecto: 15, Nota_Final: 15, Asistencia_Porcentaje: 86, Participacion_Porcentaje: 80 },
+            { ID_Estudiante: "EST-037", Nombre_Estudiante: "Fernanda Vera", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 18, Nota_Practica: 17, Nota_Parcial: 17, Nota_Proyecto: 18, Nota_Final: 17, Asistencia_Porcentaje: 96, Participacion_Porcentaje: 94 },
+            { ID_Estudiante: "EST-038", Nombre_Estudiante: "Álvaro Medina", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 10, Nota_Practica: 10, Nota_Parcial: 10, Nota_Proyecto: 10, Nota_Final: 10, Asistencia_Porcentaje: 67, Participacion_Porcentaje: 53 },
+            { ID_Estudiante: "EST-039", Nombre_Estudiante: "Paola Benavides", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 16, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 16, Nota_Final: 16, Asistencia_Porcentaje: 89, Participacion_Porcentaje: 83 },
+            { ID_Estudiante: "EST-040", Nombre_Estudiante: "Esteban Ramos", Curso: "Inteligencia Artificial", Seccion: "D", Ciclo: "VIII", Nota_Tarea: 13, Nota_Practica: 12, Nota_Parcial: 12, Nota_Proyecto: 13, Nota_Final: 12, Asistencia_Porcentaje: 79, Participacion_Porcentaje: 71 },
+
+            { ID_Estudiante: "EST-041", Nombre_Estudiante: "Juliana Salas", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 16, Nota_Practica: 16, Nota_Parcial: 15, Nota_Proyecto: 17, Nota_Final: 16, Asistencia_Porcentaje: 92, Participacion_Porcentaje: 87 },
+            { ID_Estudiante: "EST-042", Nombre_Estudiante: "Manuel Cárdenas", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 14, Nota_Practica: 15, Nota_Parcial: 13, Nota_Proyecto: 15, Nota_Final: 14, Asistencia_Porcentaje: 85, Participacion_Porcentaje: 78 },
+            { ID_Estudiante: "EST-043", Nombre_Estudiante: "Renata Villanueva", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 19, Nota_Practica: 18, Nota_Parcial: 18, Nota_Proyecto: 19, Nota_Final: 18, Asistencia_Porcentaje: 98, Participacion_Porcentaje: 96 },
+            { ID_Estudiante: "EST-044", Nombre_Estudiante: "Cristian Aguilar", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 12, Nota_Practica: 11, Nota_Parcial: 11, Nota_Proyecto: 12, Nota_Final: 11, Asistencia_Porcentaje: 71, Participacion_Porcentaje: 59 },
+            { ID_Estudiante: "EST-045", Nombre_Estudiante: "Beatriz Romero", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 17, Nota_Practica: 17, Nota_Parcial: 16, Nota_Proyecto: 17, Nota_Final: 17, Asistencia_Porcentaje: 94, Participacion_Porcentaje: 91 },
+            { ID_Estudiante: "EST-046", Nombre_Estudiante: "Joaquín Méndez", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 13, Nota_Practica: 13, Nota_Parcial: 12, Nota_Proyecto: 14, Nota_Final: 13, Asistencia_Porcentaje: 81, Participacion_Porcentaje: 73 },
+            { ID_Estudiante: "EST-047", Nombre_Estudiante: "Teresa Valdivia", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 15, Nota_Practica: 15, Nota_Parcial: 14, Nota_Proyecto: 16, Nota_Final: 15, Asistencia_Porcentaje: 88, Participacion_Porcentaje: 83 },
+            { ID_Estudiante: "EST-048", Nombre_Estudiante: "Nicolás Zamora", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 10, Nota_Practica: 10, Nota_Parcial: 10, Nota_Proyecto: 11, Nota_Final: 10, Asistencia_Porcentaje: 66, Participacion_Porcentaje: 51 },
+            { ID_Estudiante: "EST-049", Nombre_Estudiante: "Adriana Salinas", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 18, Nota_Practica: 17, Nota_Parcial: 16, Nota_Proyecto: 18, Nota_Final: 17, Asistencia_Porcentaje: 96, Participacion_Porcentaje: 93 },
+            { ID_Estudiante: "EST-050", Nombre_Estudiante: "Roberto Chávez", Curso: "Computación Gráfica", Seccion: "E", Ciclo: "VII", Nota_Tarea: 12, Nota_Practica: 13, Nota_Parcial: 11, Nota_Proyecto: 12, Nota_Final: 12, Asistencia_Porcentaje: 77, Participacion_Porcentaje: 66 }
+        ];
+
+        let filteredData = [...rawData];
+        let chartInstances = {};
+
+        function getApellido(nombreCompleto) {
+            const partes = nombreCompleto.trim().split(' ');
+            return partes.length > 1 ? partes[partes.length - 1] : partes[0];
+        }
+
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(el => el.classList.add('hidden'));
+
+            // Reset tab buttons style
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-slate-800');
+            });
+
+            // Show selected tab content
+            const activeContent = document.getElementById(`content-${tabId}`);
+            if (activeContent) activeContent.classList.remove('hidden');
+
+            // Highlight active button
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-slate-800');
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+
+            // Re-render dashboard charts for sizing
+            renderDashboard();
+        }
+
+        window.onload = function() {
+            renderDashboard();
+        };
+
+        function filtrarFiltrosCombinados() {
+            const valCurso = document.getElementById('filtroCurso').value;
+            const valSeccion = document.getElementById('filtroSeccion').value;
+
+            filteredData = rawData.filter(d => {
+                const matchCurso = valCurso === 'TODOS' || d.Curso === valCurso;
+                const matchSeccion = valSeccion === 'TODAS' || d.Seccion === valSeccion;
+                return matchCurso && matchSeccion;
+            });
+
+            renderDashboard();
+        }
+
+        function destroyChart(id) {
+            if (chartInstances[id]) {
+                chartInstances[id].destroy();
+                delete chartInstances[id];
+            }
+        }
+
+        function renderDashboard() {
+            actualizarKPIs();
+            renderResumenCharts();
+            renderAprobadosTab();
+            renderAsistenciaTab();
+            renderParentescoTab();
+            renderTablaCompleta();
+        }
+
+        function actualizarKPIs() {
+            const total = filteredData.length;
+            const aprobados = filteredData.filter(d => d.Nota_Final >= 11).length;
+            const desaprobados = total - aprobados;
+            const avgAsistencia = total > 0 ? (filteredData.reduce((acc, curr) => acc + curr.Asistencia_Porcentaje, 0) / total).toFixed(1) : 0;
+
+            document.getElementById('kpi-aprobados').innerText = aprobados;
+            document.getElementById('kpi-aprobados-pct').innerText = `(${total > 0 ? Math.round((aprobados / total) * 100) : 0}%)`;
+
+            document.getElementById('kpi-desaprobados').innerText = desaprobados;
+            document.getElementById('kpi-desaprobados-pct').innerText = `(${total > 0 ? Math.round((desaprobados / total) * 100) : 0}%)`;
+
+            document.getElementById('kpi-asistencia').innerText = `${avgAsistencia}%`;
+        }
+
+        // --- CHARTS GENERATION ---
+
+        function renderResumenCharts() {
+            // Chart 1: Doughnut Aprobados
+            const aprobadosCount = filteredData.filter(d => d.Nota_Final >= 11).length;
+            const desaprobadosCount = filteredData.length - aprobadosCount;
+
+            destroyChart('chartResumenAprobados');
+            chartInstances['chartResumenAprobados'] = new Chart(document.getElementById('chartResumenAprobados'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aprobados', 'Desaprobados'],
+                    datasets: [{
+                        data: [aprobadosCount, desaprobadosCount],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } }
+                }
+            });
+
+            // Chart 2: Top Asistencia
+            const sortedAsistencia = [...filteredData].sort((a,b) => b.Asistencia_Porcentaje - a.Asistencia_Porcentaje).slice(0, 5);
+            destroyChart('chartResumenAsistencia');
+            chartInstances['chartResumenAsistencia'] = new Chart(document.getElementById('chartResumenAsistencia'), {
+                type: 'bar',
+                data: {
+                    labels: sortedAsistencia.map(d => d.Nombre_Estudiante),
+                    datasets: [{
+                        label: '% Asistencia',
+                        data: sortedAsistencia.map(d => d.Asistencia_Porcentaje),
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart 3: Top Faltas
+            const sortedFaltas = [...filteredData].sort((a,b) => a.Asistencia_Porcentaje - b.Asistencia_Porcentaje).slice(0, 5);
+            destroyChart('chartResumenFaltas');
+            chartInstances['chartResumenFaltas'] = new Chart(document.getElementById('chartResumenFaltas'), {
+                type: 'bar',
+                data: {
+                    labels: sortedFaltas.map(d => d.Nombre_Estudiante),
+                    datasets: [{
+                        label: '% Faltas',
+                        data: sortedFaltas.map(d => 100 - d.Asistencia_Porcentaje),
+                        backgroundColor: '#f43f5e',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { max: 50, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart 4: Apellidos Coincidentes
+            const mapApellidos = {};
+            filteredData.forEach(d => {
+                const ap = getApellido(d.Nombre_Estudiante);
+                mapApellidos[ap] = (mapApellidos[ap] || 0) + 1;
+            });
+            const coapellidos = Object.keys(mapApellidos).filter(ap => mapApellidos[ap] > 1);
+
+            destroyChart('chartResumenApellidos');
+            chartInstances['chartResumenApellidos'] = new Chart(document.getElementById('chartResumenApellidos'), {
+                type: 'bar',
+                data: {
+                    labels: coapellidos.length > 0 ? coapellidos : ['Sin coincidencia'],
+                    datasets: [{
+                        label: 'Cantidad de Alumnos',
+                        data: coapellidos.length > 0 ? coapellidos.map(ap => mapApellidos[ap]) : [0],
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: '#334155' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderAprobadosTab() {
+            const desaprobados = filteredData.filter(d => d.Nota_Final < 11);
+            const tbody = document.getElementById('tablaDesaprobados');
+            tbody.innerHTML = desaprobados.map(d => `
+                <tr class="hover:bg-slate-700/40">
+                    <td class="p-3 font-semibold text-indigo-400">${d.ID_Estudiante}</td>
+                    <td class="p-3 font-medium text-white">${d.Nombre_Estudiante}</td>
+                    <td class="p-3 text-slate-400">${d.Curso} (${d.Seccion})</td>
+                    <td class="p-3 text-center font-bold text-rose-400">${d.Nota_Final}</td>
+                    <td class="p-3 text-center font-semibold text-rose-300">${d.Asistencia_Porcentaje}%</td>
+                </tr>
+            `).join('');
+
+            const aprobadosCount = filteredData.filter(d => d.Nota_Final >= 11).length;
+            destroyChart('chartDetalleAprobados');
+            chartInstances['chartDetalleAprobados'] = new Chart(document.getElementById('chartDetalleAprobados'), {
+                type: 'pie',
+                data: {
+                    labels: ['Aprobados', 'Desaprobados'],
+                    datasets: [{
+                        data: [aprobadosCount, desaprobados.length],
+                        backgroundColor: ['#10b981', '#f43f5e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } }
+                }
+            });
+        }
+
+        function renderAsistenciaTab() {
+            const top10Asistencia = [...filteredData].sort((a,b) => b.Asistencia_Porcentaje - a.Asistencia_Porcentaje).slice(0, 10);
+            destroyChart('chartDetalleAsistencia');
+            chartInstances['chartDetalleAsistencia'] = new Chart(document.getElementById('chartDetalleAsistencia'), {
+                type: 'bar',
+                data: {
+                    labels: top10Asistencia.map(d => d.Nombre_Estudiante),
+                    datasets: [{
+                        label: '% Asistencia',
+                        data: top10Asistencia.map(d => d.Asistencia_Porcentaje),
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const top10Faltas = [...filteredData].sort((a,b) => a.Asistencia_Porcentaje - b.Asistencia_Porcentaje).slice(0, 10);
+            destroyChart('chartDetalleFaltas');
+            chartInstances['chartDetalleFaltas'] = new Chart(document.getElementById('chartDetalleFaltas'), {
+                type: 'bar',
+                data: {
+                    labels: top10Faltas.map(d => d.Nombre_Estudiante),
+                    datasets: [{
+                        label: '% Faltas Acumuladas',
+                        data: top10Faltas.map(d => 100 - d.Asistencia_Porcentaje),
+                        backgroundColor: '#f43f5e',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderParentescoTab() {
+            const mapApellidos = {};
+            filteredData.forEach(d => {
+                const ap = getApellido(d.Nombre_Estudiante);
+                if (!mapApellidos[ap]) mapApellidos[ap] = [];
+                mapApellidos[ap].push(d);
+            });
+
+            const coapellidos = Object.keys(mapApellidos).filter(ap => mapApellidos[ap].length > 1);
+            const container = document.getElementById('cardsParentesco');
+            
+            container.innerHTML = coapellidos.map(ap => `
+                <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-amber-400 text-sm">Apellido: ${ap}</span>
+                        <span class="bg-amber-500/10 text-amber-300 text-xs px-2 py-0.5 rounded-full font-semibold">${mapApellidos[ap].length} Estudiantes</span>
+                    </div>
+                    <ul class="space-y-1 text-xs text-slate-300">
+                        ${mapApellidos[ap].map(st => `<li class="flex items-center space-x-2"><i class="fa-solid fa-user text-slate-500 text-px"></i><span>${st.Nombre_Estudiante} <span class="text-slate-500">(${st.Curso})</span></span></li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+
+            destroyChart('chartDetalleParentesco');
+            chartInstances['chartDetalleParentesco'] = new Chart(document.getElementById('chartDetalleParentesco'), {
+                type: 'bar',
+                data: {
+                    labels: coapellidos,
+                    datasets: [{
+                        label: 'Número de Coincidencias',
+                        data: coapellidos.map(ap => mapApellidos[ap].length),
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: '#334155' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTablaCompleta() {
+            const tbody = document.getElementById('tablaCompletaBody');
+            tbody.innerHTML = filteredData.map(d => {
+                const esAprobado = d.Nota_Final >= 11;
+                return `
+                    <tr class="hover:bg-slate-700/40">
+                        <td class="p-3 font-semibold text-indigo-400">${d.ID_Estudiante}</td>
+                        <td class="p-3 font-medium text-white">${d.Nombre_Estudiante}</td>
+                        <td class="p-3 text-slate-300">${d.Curso}</td>
+                        <td class="p-3 text-center text-slate-400">${d.Seccion}</td>
+                        <td class="p-3 text-center text-slate-400">${d.Ciclo}</td>
+                        <td class="p-3 text-center">${d.Nota_Tarea}</td>
+                        <td class="p-3 text-center">${d.Nota_Practica}</td>
+                        <td class="p-3 text-center">${d.Nota_Parcial}</td>
+                        <td class="p-3 text-center">${d.Nota_Proyecto}</td>
+                        <td class="p-3 text-center font-bold ${esAprobado ? 'text-emerald-400' : 'text-rose-400'}">${d.Nota_Final}</td>
+                        <td class="p-3 text-center font-semibold text-slate-300">${d.Asistencia_Porcentaje}%</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${esAprobado ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">
+                                ${esAprobado ? 'Aprobado' : 'Desaprobado'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filtrarTabla() {
+            const q = document.getElementById('inputSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#tablaCompletaBody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(q) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
